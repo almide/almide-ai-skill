@@ -1,10 +1,10 @@
-# Selmite AI Skill
+# Almide AI Skill
 
-AI-readable language reference for [Selmite](https://github.com/selmite/selmite), a programming language designed for LLM code generation.
+AI-readable language reference for [Almide](https://github.com/almide/almide), a programming language designed for LLM code generation.
 
 ## What is this?
 
-This repository contains a Claude Code skill and `CHEATSHEET.md` — a ~340-line quick reference that gives an LLM everything it needs to write valid Selmite code, with zero prior knowledge of the language.
+This repository contains a Claude Code skill and `CHEATSHEET.md` — a ~340-line quick reference that gives an LLM everything it needs to write valid Almide code, with zero prior knowledge of the language.
 
 ## Setup
 
@@ -15,13 +15,13 @@ Clone this repo into your project's skill directory:
 ```bash
 # Per-project
 mkdir -p .claude/skills
-git clone https://github.com/selmite/selmite-ai-skill.git .claude/skills/selmite
+git clone https://github.com/almide/almide-ai-skill.git .claude/skills/almide
 
 # Or globally (available in all projects)
-git clone https://github.com/selmite/selmite-ai-skill.git ~/.claude/skills/selmite
+git clone https://github.com/almide/almide-ai-skill.git ~/.claude/skills/almide
 ```
 
-Then invoke with `/selmite` in Claude Code, or Claude will automatically use it when working with `.selm` files.
+Then invoke with `/almide` in Claude Code, or Claude will automatically use it when working with `.almd` files.
 
 ### Other AI Tools
 
