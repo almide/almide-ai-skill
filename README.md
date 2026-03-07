@@ -4,21 +4,24 @@ AI-readable language reference for [Selmite](https://github.com/selmite/selmite)
 
 ## What is this?
 
-This repository contains `CHEATSHEET.md` — a ~340-line quick reference that gives an LLM everything it needs to write valid Selmite code, with zero prior knowledge of the language.
+This repository contains a Claude Code skill and `CHEATSHEET.md` — a ~340-line quick reference that gives an LLM everything it needs to write valid Selmite code, with zero prior knowledge of the language.
 
-## Usage
-
-Feed `CHEATSHEET.md` as context to your LLM when generating Selmite code.
+## Setup
 
 ### Claude Code
 
-Add to your project's `.claude/settings.json`:
+Clone this repo into your project's skill directory:
 
-```json
-{
-  "skills": ["selmite/selmite-ai-skill"]
-}
+```bash
+# Per-project
+mkdir -p .claude/skills
+git clone https://github.com/selmite/selmite-ai-skill.git .claude/skills/selmite
+
+# Or globally (available in all projects)
+git clone https://github.com/selmite/selmite-ai-skill.git ~/.claude/skills/selmite
 ```
+
+Then invoke with `/selmite` in Claude Code, or Claude will automatically use it when working with `.selm` files.
 
 ### Other AI Tools
 
