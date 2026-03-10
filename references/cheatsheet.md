@@ -4,9 +4,7 @@ File extension: `.almd`
 
 ## File structure
 ```
-module <path.separated.by.dots>
 import <module>
-import <module>.{Name1, Name2}
 // declarations...
 ```
 
@@ -40,7 +38,12 @@ async fn name(x: Type) -> Result[T, E] = expr        // async (implies effect)
 async effect fn name(x: Type) -> Result[T, E] = expr // explicit async+effect
 ```
 
-### Modifiers (order matters): `pub? async? effect? fn`
+### Visibility (optional prefix before fn/type)
+- `fn f()` — public (default)
+- `mod fn f()` — same project only (`pub(crate)` in Rust)
+- `local fn f()` — this file only (private)
+
+### Modifiers (order matters): `[local|mod]? async? effect? fn`
 
 ### Predicate: `fn empty?(xs: List[T]) -> Bool` (? suffix = Bool return only)
 
@@ -108,9 +111,30 @@ items.map(fn(x) => x + 1)
 }
 ```
 
+### For...in loop
+```
+for x in xs {
+  println(x)
+}
+
+for key in map.keys(config) {
+  let val = match map.get(config, key) { some(v) => v, none => "" }
+  println(key ++ " = " ++ val)
+}
+```
+**Prefer `for...in` over `do { guard ... }` for iterating lists.**
+
+### Range
+```
+0..5            // [0, 1, 2, 3, 4]  (exclusive end)
+1..=5           // [1, 2, 3, 4, 5]  (inclusive end)
+for i in 0..n { ... }    // optimized: no list allocation
+let xs = list.map(0..10, fn(i) => i * i)   // range as List[Int]
+```
+
 ### Do block (loop + auto-propagation)
 ```
-// As loop: use guard to break
+// As loop with dynamic condition: use guard to break
 do {
   guard current != "NONE" else ok(())   // break condition
   let data = fs.read_text(path)
@@ -124,7 +148,7 @@ do {
   decode(raw)                       // last expr is the result
 }
 ```
-**There is no `loop` or `while` keyword.** Use `do { ... }` with `guard ... else` for loops.
+**Use `for...in` for simple iteration. Use `do { guard ... }` only when you need dynamic break conditions (e.g., linked-list traversal).**
 
 ### Pipe
 ```
@@ -153,6 +177,17 @@ create_user("alice", age: 30)          // mixed positional + named
 ### String interpolation
 ```
 "hello ${name}, result=${1 + 1}"
+```
+
+### Heredoc (multi-line strings)
+```
+let sql = """
+  SELECT *
+  FROM users
+"""
+// Leading whitespace stripped based on minimum indent
+// Interpolation ${expr} works the same
+// Raw heredoc: r"""...""" (no escapes)
 ```
 
 ## Statements
@@ -243,27 +278,61 @@ The runtime calls `main(args)` where `args` includes the program name at index 0
 ## Operators (precedence high→low)
 `. ()` > `not -` > `* / % ^` > `+ - ++` > `== != < > <= >=` > `and` > `or` > `|>`
 
-`^` is XOR (integer), `++` is list concatenation.
+`^` is XOR (integer), `++` is concatenation (list or string).
 
 ## UFCS
 `f(x, y)` ≡ `x.f(y)` — compiler resolves automatically.
 
 ## Standard library modules
 
-### fs (filesystem)
-`fs.read_text(path)`, `fs.read_bytes(path)`, `fs.write(path, content)`, `fs.write_bytes(path, bytes)`, `fs.append(path, content)`, `fs.mkdir_p(path)`, `fs.exists?(path)` → Bool (no `try` needed)
+### string (auto-imported)
+`string.trim(s)`, `string.trim_start(s)`, `string.trim_end(s)`, `string.split(s, sep)`, `string.join(list, sep)`, `string.len(s)`, `string.lines(s)`, `string.pad_left(s, n, ch)`, `string.pad_right(s, n, ch)`, `string.starts_with?(s, prefix)`, `string.ends_with?(s, suffix)`, `string.slice(s, start)`, `string.slice(s, start, end)`, `string.to_bytes(s)`, `string.from_bytes(bytes)`, `string.contains(s, sub)`, `string.to_upper(s)`, `string.to_lower(s)`, `string.to_int(s)` → `Result[Int, String]`, `string.replace(s, from, to)`, `string.char_at(s, i)` → `Option[String]`, `string.chars(s)` → `List[String]`, `string.index_of(s, needle)` → `Option[Int]`, `string.repeat(s, n)`, `string.count(s, sub)` → `Int`, `string.reverse(s)`, `string.is_empty?(s)` → `Bool`, `string.is_digit?(s)`, `string.is_alpha?(s)`, `string.is_alphanumeric?(s)`, `string.is_whitespace?(s)`, `string.strip_prefix(s, prefix)` → `Option[String]`, `string.strip_suffix(s, suffix)` → `Option[String]`
 
-### string
-`string.trim(s)`, `string.split(s, sep)`, `string.join(list, sep)`, `string.len(s)`, `string.pad_left(s, n, ch)`, `string.starts_with?(s, prefix)`, `string.slice(s, start)`, `string.slice(s, start, end)`, `string.to_bytes(s)`, `string.contains(s, sub)`
+### list (auto-imported)
+`list.len(xs)`, `list.get(xs, i)` → `Option[T]`, `list.get_or(xs, i, default)` → `T`, `list.first(xs)` → `Option[T]`, `list.last(xs)` → `Option[T]`, `list.sort(xs)`, `list.sort_by(xs, fn(x) => key)`, `list.reverse(xs)`, `list.contains(xs, x)`, `list.index_of(xs, x)` → `Option[Int]`, `list.any(xs, fn(x) => bool)`, `list.all(xs, fn(x) => bool)`, `list.each(xs, f)`, `list.map(xs, f)`, `list.flat_map(xs, f)`, `list.filter(xs, f)`, `list.find(xs, f)`, `list.fold(xs, init, f)`, `list.enumerate(xs)` → `List[(Int, T)]`, `list.zip(a, b)` → `List[(T, U)]`, `list.flatten(xss)`, `list.take(xs, n)`, `list.drop(xs, n)`, `list.chunk(xs, n)` → `List[List[T]]`, `list.unique(xs)`, `list.join(xs, sep)` → `String`, `list.sum(xs)` → `Int`, `list.product(xs)` → `Int`, `list.min(xs)` → `Option[T]`, `list.max(xs)` → `Option[T]`, `list.is_empty?(xs)` → `Bool`
 
-### list
-`list.len(xs)`, `list.get(xs, i)` → `Option[T]`, `list.sort(xs)`, `list.contains(xs, x)`, `list.each(xs, f)`, `list.map(xs, f)`, `list.filter(xs, f)`, `list.find(xs, f)`, `list.fold(xs, init, f)`
+### map (auto-imported)
+`map.new()` → empty `Map[K, V]`, `map.get(m, key)` → `Option[V]`, `map.get_or(m, key, default)` → `V`, `map.set(m, key, value)` → `Map[K, V]`, `map.contains(m, key)` → `Bool`, `map.remove(m, key)` → `Map[K, V]`, `map.merge(a, b)` → `Map[K, V]`, `map.keys(m)` → `List[K]` (sorted), `map.values(m)` → `List[V]`, `map.len(m)` → `Int`, `map.entries(m)` → `List[(K, V)]`, `map.from_list(xs, fn(x) => (k, v))` → `Map[K, V]`, `map.is_empty?(m)` → `Bool`
 
-### int
-`int.to_hex(n)` — takes 64-bit Int, returns hex String
+### int / float (auto-imported)
+`int.to_string(n)`, `int.to_hex(n)`, `int.parse(s)` → `Result[Int, String]`, `int.parse_hex(s)` → `Result[Int, String]`, `int.abs(n)`, `int.min(a, b)`, `int.max(a, b)`, `int.band(a, b)`, `int.bor(a, b)`, `int.bxor(a, b)`, `int.bshl(a, n)`, `int.bshr(a, n)`, `int.bnot(a)`, `int.wrap_add(a, b, bits)`, `int.wrap_mul(a, b, bits)`, `int.rotate_right(a, n, bits)`, `int.rotate_left(a, n, bits)`, `int.to_u32(a)`, `int.to_u8(a)`
+`float.to_string(n)`, `float.to_int(n)`, `float.from_int(n)`, `float.round(n)`, `float.floor(n)`, `float.ceil(n)`, `float.abs(n)`, `float.sqrt(n)`, `float.parse(s)` → `Result[Float, String]`
 
-### env
-`env.unix_timestamp()` → Int, `env.args()` → `List[String]`
+### fs (auto-imported, effect fns)
+`fs.read_text(path)`, `fs.read_bytes(path)`, `fs.read_lines(path)`, `fs.write(path, content)`, `fs.write_bytes(path, bytes)`, `fs.append(path, content)`, `fs.mkdir_p(path)`, `fs.exists?(path)` → `Bool`, `fs.is_dir?(path)` → `Bool`, `fs.is_file?(path)` → `Bool`, `fs.remove(path)`, `fs.list_dir(path)`, `fs.copy(src, dst)`, `fs.rename(src, dst)`
+
+### path (auto-imported)
+`path.join(base, child)`, `path.dirname(p)`, `path.basename(p)`, `path.extension(p)` → `Option[String]`, `path.is_absolute?(p)` → `Bool`
+
+### env (auto-imported, effect fns)
+`env.unix_timestamp()` → `Int`, `env.millis()` → `Int`, `env.args()` → `List[String]`, `env.get(name)` → `Option[String]`, `env.set(name, value)`, `env.cwd()` → `Result[String, String]`, `env.sleep_ms(ms)`
+
+### process (auto-imported, effect fns)
+`process.exec(cmd, args)` → `Result[String, String]`, `process.exec_status(cmd, args)` → `Result[{code: Int, stdout: String, stderr: String}, String]`, `process.exit(code)`, `process.stdin_lines()` → `Result[List[String], String]`
+
+### io (auto-imported, effect fns)
+`io.read_line()` → `String`, `io.print(s)` (no newline), `io.read_all()` → `String`
+
+### json (requires `import json`)
+`json.parse(text)` → `Result[Json, String]`, `json.stringify(j)`, `json.get(j, key)` → `Option[Json]`, `json.get_string(j, key)` → `Option[String]`, `json.get_int(j, key)` → `Option[Int]`, `json.get_bool(j, key)` → `Option[Bool]`, `json.get_array(j, key)` → `Option[List[Json]]`, `json.keys(j)` → `List[String]`, `json.to_string(j)` → `Option[String]`, `json.to_int(j)` → `Option[Int]`, `json.from_string(s)`, `json.from_int(n)`, `json.from_bool(b)`, `json.null()`, `json.array(items)`, `json.from_map(m)`
+
+### math (requires `import math`)
+`math.min(a, b)`, `math.max(a, b)`, `math.abs(n)`, `math.pow(base, exp)`, `math.pi()`, `math.e()`, `math.sin(x)`, `math.cos(x)`, `math.tan(x)`, `math.log(x)`, `math.exp(x)`, `math.sqrt(x)`
+
+### random (requires `import random`, effect fns)
+`random.int(min, max)` (inclusive), `random.float()` (0.0..1.0), `random.choice(xs)` → `Option[T]`, `random.shuffle(xs)`
+
+### regex (requires `import regex`)
+`regex.match?(pat, s)`, `regex.full_match?(pat, s)`, `regex.find(pat, s)` → `Option[String]`, `regex.find_all(pat, s)`, `regex.replace(pat, s, rep)`, `regex.replace_first(pat, s, rep)`, `regex.split(pat, s)`, `regex.captures(pat, s)` → `Option[List[String]]`
+
+### time (requires `import time`)
+`time.now()` → `Int` (unix seconds), `time.millis()` → `Int`, `time.sleep(ms)` (effect), `time.year(ts)`, `time.month(ts)` (1-12), `time.day(ts)` (1-31), `time.hour(ts)` (0-23), `time.minute(ts)` (0-59), `time.second(ts)` (0-59), `time.weekday(ts)` (0=Mon, 6=Sun), `time.to_iso(ts)`, `time.from_parts(y, m, d, h, min, s)` → `Int`
+
+### encoding (requires `import encoding`)
+`encoding.hex_encode(bytes)`, `encoding.hex_decode(s)` → `Result[List[Int], String]`, `encoding.base64_encode(bytes)`, `encoding.base64_decode(s)` → `Result[List[Int], String]`
+
+### args (requires `import args`)
+`args.flag?(name)` → `Bool`, `args.option(name)` → `Option[String]`, `args.option_or(name, fallback)` → `String`, `args.positional()` → `List[String]`
 
 ## Key rules
 - Newline = statement separator (no semicolons needed)
@@ -275,9 +344,20 @@ The runtime calls `main(args)` where `args` includes the program name at index 0
 - No null — use `Option[T]`
 - No inheritance — use trait + impl
 - No macros, no operator overloading, no implicit conversions
-- Empty list = `[]` (no `list.new()` or `list.empty()`)
+- Empty list = `[]` (no `list.new()` or `list.empty()`), empty map = `map.new()`
 - `_` is ONLY for match wildcard patterns, never as a variable name
 - The stdlib functions listed above are exhaustive — no other functions exist
+- Use `for x in xs { ... }` for iteration, NOT `do { var i = 0; guard ... }`
+
+## Common mistakes (DO NOT)
+- `list[1, 2, 3]` → **WRONG**. Write `[1, 2, 3]`. `list` is a module, not a type constructor
+- `each(xs, f)` → **WRONG**. Write `list.each(xs, f)`. All stdlib functions need module prefix
+- `map[K, V]` as a value → **WRONG**. Write `map.new()` to create an empty map
+- `List.new()` → **WRONG**. Write `[]`. There is no `new()` for List
+- `string.length(s)` → **WRONG**. Write `string.len(s)`. No synonyms
+- `println(x)` where x is Int → **WRONG**. Write `println(int.to_string(x))`. No implicit conversion
+- `1 :: 2 :: []` → **WRONG**. Write `[1, 2]`. There is no cons operator `::`
+- `fn foo[T](x: T)` → **WRONG**. User-defined generic functions are not supported. Use concrete types
 
 ## Complete example
 ```
@@ -300,17 +380,10 @@ effect fn greet(name: String) -> Result[Unit, AppError] = {
 }
 
 effect fn process_all(items: List[String]) -> Result[Unit, AppError] = {
-  var remaining = list.len(items)
-  do {
-    guard remaining > 0 else ok(())
-    let idx = list.len(items) - remaining
-    let item = match list.get(items, idx) {
-      some(v) => v,
-      none => "",
-    }
+  for item in items {
     println("Processing: ${item}")
-    remaining = remaining - 1
   }
+  ok(())
 }
 
 effect fn main(args: List[String]) -> Result[Unit, AppError] = {

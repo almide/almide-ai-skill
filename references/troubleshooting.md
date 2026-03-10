@@ -19,10 +19,16 @@ Only stdlib functions listed in `references/cheatsheet.md` exist. Do NOT invent 
 Common mistakes:
 - `list.new()` → use `[]`
 - `list.empty()` → use `[]`
+- `List.new()` → use `[]`
 - `print(x)` → use `println(x)`
-- `string.replace(s, a, b)` → not available, use split+join pattern
 - `list.push(xs, x)` → use `xs ++ [x]`
-- `map.get(m, k)` → not available; pattern match or use fold
+- `string.length(s)` → use `string.len(s)`
+- `list[1, 2, 3]` → use `[1, 2, 3]` (list is a module, not a constructor)
+- `each(xs, f)` → use `list.each(xs, f)` (all stdlib fns need module prefix)
+- `1 :: 2 :: []` → use `[1, 2]` (no cons operator)
+
+Auto-imported modules (no `import` needed): `string`, `list`, `map`, `int`, `float`, `fs`, `path`, `env`, `process`, `io`
+Requires `import`: `json`, `math`, `random`, `regex`, `time`, `encoding`, `args`
 
 ### "_ cannot be used as variable name"
 `_` is ONLY valid in match patterns. `let _ = x` is a syntax error.
@@ -57,17 +63,52 @@ type Pair[A, B] = { first: A, second: B }
 ```
 
 ### "loop is not a keyword"
-There is no `loop` or `while`. Use `do { ... }` with `guard ... else` for loops.
+Use `for...in` for iteration or `do { ... }` with `guard` for dynamic conditions.
 ```
 // BAD
 while count > 0 { ... }
+for (let i = 0; i < n; i++) { ... }
 
-// GOOD
+// GOOD — iterate over a list
+for item in items {
+  println(item)
+}
+
+// GOOD — iterate with index using range
+for i in 0..n {
+  let item = list.get_or(items, i, "")
+  println(item)
+}
+
+// GOOD — dynamic break condition (linked-list, streaming, etc.)
 do {
   guard count > 0 else ok(())
-  // loop body
   count = count - 1
 }
+```
+
+### "implicit conversion" / printing non-String values
+Almide has no implicit conversion. Convert explicitly:
+```
+// BAD
+println(42)
+println(x)  // where x is Int
+
+// GOOD
+println(int.to_string(42))
+println(int.to_string(x))
+println(float.to_string(3.14))
+```
+
+### "generic functions not supported"
+User-defined generic functions are NOT supported. Use concrete types.
+```
+// BAD
+fn identity[T](x: T) -> T = x
+
+// GOOD — use concrete types
+fn identity_int(x: Int) -> Int = x
+fn identity_string(x: String) -> String = x
 ```
 
 ## Runtime Errors
@@ -77,8 +118,9 @@ do {
 2. Check the implementation, NOT the test signatures
 3. Common causes:
    - Off-by-one in `string.slice` (0-based, end-exclusive)
-   - `list.get` returns `Option[T]`, not `T` — must unwrap with match
+   - `list.get` returns `Option[T]`, not `T` — use `list.get_or` or match
    - Missing edge case (empty input, single element)
+   - Forgot `int.to_string()` before string concatenation
 
 ### "almide: command not found"
 The `almide` CLI is not installed or not in PATH.
