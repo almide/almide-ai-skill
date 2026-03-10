@@ -1,16 +1,44 @@
-# Almide AI Skill
+# Almide AI Skills
 
-AI-readable language reference for [Almide](https://github.com/almide/almide), a programming language designed for LLM code generation.
+AI-readable language reference and module proliferation toolkit for [Almide](https://github.com/almide/almide), a programming language designed for LLM code generation.
 
-## What is this?
+## Skills
 
-This repository contains a Claude Code skill and `CHEATSHEET.md` — a ~340-line quick reference that gives an LLM everything it needs to write valid Almide code, with zero prior knowledge of the language.
+| Skill | Command | What it does |
+|-------|---------|-------------|
+| **almide** | `/almide` | Language reference — gives the LLM everything it needs to write valid Almide code |
+| **scaffold** | `/almide-scaffold csv "CSV parser"` | Generate a module skeleton with typed stubs and test stubs |
+| **mine-prior-art** | `/almide-mine-prior-art csv` | Find reference implementations in other languages, extract test aspects, generate comprehensive tests |
+| **fill-module** | `/almide-fill-module csv.almd` | Implement a stub module to pass all tests |
+| **verify** | `/almide-verify csv.almd` | Type-check and test a module on both Rust and TypeScript targets |
+| **proliferate** | `/almide-proliferate spec.toml` | Run the full pipeline (scaffold → mine → fill → verify) for multiple modules |
+
+### Module Generation Pipeline
+
+```
+/almide-scaffold csv "CSV parser"
+        │
+        ▼  csv.almd (stubs)
+/almide-mine-prior-art csv
+        │
+        ▼  csv_test.almd (comprehensive tests from 5 languages)
+/almide-fill-module csv.almd
+        │
+        ▼  csv.almd (implemented)
+/almide-verify csv.almd
+        │
+        ▼  ✅ type-check  ✅ test-rust  ✅ test-ts
+```
+
+Or run the whole pipeline at once:
+
+```
+/almide-proliferate spec.toml
+```
 
 ## Setup
 
 ### Claude Code
-
-Clone this repo into your project's skill directory:
 
 ```bash
 # Per-project
@@ -21,15 +49,15 @@ git clone https://github.com/almide/almide-ai-skill.git .claude/skills/almide
 git clone https://github.com/almide/almide-ai-skill.git ~/.claude/skills/almide
 ```
 
-Then invoke with `/almide` in Claude Code, or Claude will automatically use it when working with `.almd` files.
+All skills are auto-discovered by Claude Code from the nested directory structure.
 
 ### Other AI Tools
 
-Copy the contents of `CHEATSHEET.md` into your system prompt or context window.
+Copy the contents of `references/cheatsheet.md` into your system prompt or context window.
 
 ## Benchmark
 
-An LLM given only this cheatsheet (no other context) achieved **100% pass rate** (10/10 trials, 11/11 tests each) on the [MiniGit benchmark](https://github.com/mame/ai-coding-lang-bench).
+An LLM given only the cheatsheet (no other context) achieved **100% pass rate** (10/10 trials, 11/11 tests each) on the [MiniGit benchmark](https://github.com/mame/ai-coding-lang-bench).
 
 ## License
 
